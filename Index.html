@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Binaural Generator</title>
+
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{
+ margin:0;background:#090b0f;color:white;
+ font-family:-apple-system,BlinkMacSystemFont,Arial;
+ padding:25px 18px;
+}
+.app{max-width:520px;margin:auto}
+h1{font-size:29px;margin-bottom:5px}
+.sub{color:#9da6b4;margin-bottom:25px}
+.card{
+ background:#171a20;border:1px solid #303641;
+ border-radius:20px;padding:18px;margin:14px 0
+}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;color:#aeb6c2;font-size:13px;margin-bottom:6px}
+input{
+ width:100%;background:#0d1015;color:white;
+ border:1px solid #363c47;border-radius:13px;
+ padding:13px;font-size:19px
+}
+.big{text-align:center;font-size:40px;font-weight:800;margin:15px 0 2px}
+.center{text-align:center;color:#9da6b4}
+.presets{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+button{border:0;border-radius:14px;padding:14px;font-weight:700}
+.preset{background:#292e38;color:white;padding:11px 2px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+.start{background:white;color:#111;font-size:17px}
+.stop{background:#2a2f38;color:white;font-size:17px}
+.note{font-size:12px;color:#8e97a5;line-height:1.5}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>🎧 Binaural Generator</h1>
+<div class="sub">Generator stereo dla iPhone / Safari</div>
+
+<div class="card">
+
+<div class="row">
+
+<div>
+<label>LEWE UCHO — Hz</label>
+<input id="left" type="number" value="200" min="40" max="1000" step="0.1">
+</div>
+
+<div>
+<label>PRAWE UCHO — Hz</label>
+<input id="right" type="number" value="210" min="40" max="1000" step="0.1">
+</div>
+
+</div>
+
+<div class="big"><span id="beat">10.0</span> Hz</div>
+<div class="center">różnica binauralna</div>
+
+</div>
+
+<div class="card">
+
+<label>GOTOWE USTAWIENIA</label>
+
+<div class="presets">
+<button class="preset" data-beat="2">Delta<br>2 Hz</button>
+<button class="preset" data-beat="6">Theta<br>6 Hz</button>
+<button class="preset" data-beat="10">Alpha<br>10 Hz</button>
+<button class="preset" data-beat="18">Beta<br>18 Hz</button>
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="row">
+
+<div>
+<label>CZAS SŁUCHANIA (min)</label>
+<input id="minutes" type="number" value="20" min="1" max="180">
+</div>
+
+<div>
+<label>GŁOŚNOŚĆ</label>
+<input id="volume" type="range" value="0.07" min="0" max="0.25" step="0.01">
+</div>
+
+</div>
+
+<div class="big" id="timer">20:00</div>
+
+<div class="actions">
+<button class="start" id="start">▶ START</button>
+<button class="stop" id="stop">■ STOP</button>
+</div>
+
+<div class="center" id="status" style="margin-top:15px">Gotowy</div>
+
+</div>
+
+<p class="note">
+Używaj słuchawek stereo. Zacznij od niskiej głośności.
+Nie używaj podczas prowadzenia samochodu ani obsługi maszyn.
+Presety określają różnicę częstotliwości i nie stanowią terapii.
+</p>
+
+</div>
+
+<script>
+
+let ctx;
+let oscLeft;
+let oscRight;
+let gain;
+let panLeft;
+let panRight;
+let interval;
+let endTime;
+
+const left=document.getElementById("left");
+const right=document.getElementById("right");
+const beat=document.getElementById("beat");
+const minutes=document.getElementById("minutes");
+const volume=document.getElementById("volume");
+const timer=document.getElementById("timer");
+const status=document.getElementById("status");
+
+function updateBeat(){
+ beat.textContent=Math.abs(Number(right.value)-Number(left.value)).toFixed(1);
+}
+
+function resetTimer(){
+ let s=Math.max(1,Number(minutes.value)||20)*60;
+ timer.textContent=
+ String(Math.floor(s/60)).padStart(2,"0")+":"+
+ String(s%60).padStart(2,"0");
+}
+
+left.addEventListener("input",updateBeat);
+right.addEventListener("input",updateBeat);
+minutes.addEventListener("input",resetTimer);
+
+document.querySelectorAll(".preset").forEach(button=>{
+ button.addEventListener("click",()=>{
+  let base=Number(left.value)||200;
+  right.value=(base+Number(button.dataset.beat)).toFixed(1);
+  updateBeat();
+ });
+});
+
+function stopAudio(){
+
+ if(interval){
+  clearInterval(interval);
+  interval=null;
+ }
+
+ if(oscLeft){
+  try{oscLeft.stop()}catch(e){}
+ }
+
+ if(oscRight){
+  try{oscRight.stop()}catch(e){}
+ }
+
+ if(ctx){
+  try{ctx.close()}catch(e){}
+ }
+
+ ctx=null;
+ oscLeft=null;
+ oscRight=null;
+
+ status.textContent="Zatrzymano";
+ resetTimer();
+}
+
+document.getElementById("start").addEventListener("click",async()=>{
+
+ stopAudio();
+
+ const AudioContext=window.AudioContext||window.webkitAudioContext;
+
+ if(!AudioContext){
+  status.textContent="Przeglądarka nie obsługuje Web Audio";
+  return;
+ }
+
+ ctx=new AudioContext();
+
+ await ctx.resume();
+
+ oscLeft=ctx.createOscillator();
+ oscRight=ctx.createOscillator();
+
+ gain=ctx.createGain();
+
+ panLeft=ctx.createStereoPanner();
+ panRight=ctx.createStereoPanner();
+
+ panLeft.pan.value=-1;
+ panRight.pan.value=1;
+
+ oscLeft.frequency.value=Number(left.value);
+ oscRight.frequency.value=Number(right.value);
+
+ gain.gain.setValueAtTime(0,ctx.currentTime);
+ gain.gain.linearRampToValueAtTime(Number(volume.value),ctx.currentTime+1);
+
+ oscLeft.connect(panLeft).connect(gain);
+ oscRight.connect(panRight).connect(gain);
+
+ gain.connect(ctx.destination);
+
+ oscLeft.start();
+ oscRight.start();
+
+ let total=Math.max(1,Number(minutes.value)||20)*60;
+
+ endTime=Date.now()+total*1000;
+
+ status.textContent="🎧 Odtwarzanie stereo";
+
+ interval=setInterval(()=>{
+
+  let remaining=Math.max(0,Math.ceil((endTime-Date.now())/1000));
+
+  timer.textContent=
+  String(Math.floor(remaining/60)).padStart(2,"0")+":"+
+  String(remaining%60).padStart(2,"0");
+
+  if(remaining<=0){
+   stopAudio();
+  }
+
+ },250);
+
+});
+
+document.getElementById("stop").addEventListener("click",stopAudio);
+
+volume.addEventListener("input",()=>{
+ if(gain&&ctx){
+  gain.gain.setTargetAtTime(Number(volume.value),ctx.currentTime,0.05);
+ }
+});
+
+updateBeat();
+resetTimer();
+
+</script>
+
+</body>
+</html>
