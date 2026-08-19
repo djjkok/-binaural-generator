@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#090b0f">
+<title>Binaural 2.0 RC2</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0f;--card:#151820;--line:#2d3340;--muted:#9aa4b2;--soft:#242936}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial;padding:22px 16px 96px}
+.app{max-width:560px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.brand{font-size:27px;font-weight:850}.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 9px}
+.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;margin:12px 0}.hero h1{margin:0 0 7px;font-size:27px}.hero p,.muted,.info{color:var(--muted)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice{background:var(--soft);color:#fff;border:1px solid transparent;border-radius:17px;padding:16px;text-align:left}.choice strong{display:block;font-size:17px}.choice small{color:var(--muted)}.choice.active{background:#fff;color:#111}.choice.active small{color:#555}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}input,select{width:100%;background:#0f1218;color:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:18px}input[type=range]{padding:0;border:0}
+.big{font-size:42px;font-weight:850;text-align:center;margin:13px}.center{text-align:center}.btn{width:100%;border:0;border-radius:17px;padding:16px;font-weight:800;font-size:17px}.primary{background:#fff;color:#111}.secondary{background:#252a35;color:#fff;border:1px solid var(--line);margin-top:9px}
+.chips{display:flex;gap:8px;overflow:auto;padding-bottom:3px}.chip{white-space:nowrap;background:var(--soft);color:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 12px}.chip.active{background:#fff;color:#111}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.stage{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin:8px 0}.stage button{background:#2a2f39;color:#fff;border:0;border-radius:12px;padding:12px}
+.sound{display:grid;grid-template-columns:90px 1fr 44px;gap:10px;align-items:center;margin:14px 0}
+.audioDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:6px}.audioDot.on{background:#32d74b}.audioDot.warn{background:#ffd60a}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:#0b0e13ef;backdrop-filter:blur(18px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:10}
+.tab{background:transparent;border:0;color:#7f8996;padding:8px;font-size:12px}.tab b{display:block;font-size:19px}.tab.active{color:#fff}.panel{display:none}.panel.active{display:block}.hidden{display:none!important}
+.resume{position:fixed;left:16px;right:16px;bottom:94px;background:#fff;color:#111;border:0;border-radius:18px;padding:15px;font-weight:850;z-index:20;box-shadow:0 8px 30px #0008}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top"><div class="brand">BINAURAL</div><div class="tag">2.0 RC2</div></div>
+
+<section id="simple" class="panel active">
+<div class="hero"><h1>Jakiej sesji potrzebujesz?</h1><p>Wybierz cel, czas i naciśnij Start. Podczas odtwarzania możesz zmieniać sesję bez STOP.</p></div>
+<div class="grid2" id="choices">
+<button class="choice active" data-p="focus"><strong>Focus</strong><small>10 Hz • Alpha</small></button>
+<button class="choice" data-p="relax"><strong>Relax</strong><small>7 Hz • Theta</small></button>
+<button class="choice" data-p="med"><strong>Meditation</strong><small>6 Hz • Theta</small></button>
+<button class="choice" data-p="sleep"><strong>Sleep</strong><small>3 Hz • Delta</small></button>
+<button class="choice" data-p="nap"><strong>Power Nap</strong><small>6 Hz</small></button>
+<button class="choice" data-p="creative"><strong>Creativity</strong><small>8 Hz</small></button>
+</div>
+<div class="card">
+<div class="grid2"><div><label>CZAS</label><select id="mins"><option>5</option><option>10</option><option selected>20</option><option>30</option><option>45</option><option>60</option></select></div><div><label>GŁOŚNOŚĆ</label><input id="vol" type="range" min="0" max=".2" step=".01" value=".07"></div></div>
+<div class="big" id="timer">20:00</div>
+<button class="btn primary" id="startSimple">▶ START</button><button class="btn secondary hidden" id="stopSimple">■ STOP</button>
+<div class="center muted" id="statusSimple" style="margin-top:10px"><span class="audioDot" id="dotSimple"></span>Gotowy</div>
+</div>
+<div class="card row"><div><strong>Udostępnij sesję</strong><div class="info">Link zapisuje preset i czas.</div></div><button class="chip" id="shareSimple">Share</button></div>
+</section>
+
+<section id="lab" class="panel">
+<div class="hero"><h1>Precision Lab</h1><p>Pełna kontrola L/R, beat i carrier. Zmiany podczas odtwarzania przechodzą płynnie.</p></div>
+<div class="card">
+<div class="grid2"><div><label>LEWE UCHO</label><input id="left" type="number" value="200" min="40" max="1200" step=".01"></div><div><label>PRAWE UCHO</label><input id="right" type="number" value="210" min="40" max="1200" step=".01"></div></div>
+<div class="big"><span id="beat">10.00</span> Hz</div><div class="center muted">różnica binauralna</div>
+<div class="grid2" style="margin-top:14px"><div><label>BASE / CARRIER</label><input id="carrier" type="number" value="205" min="40" max="1200" step=".01"></div><div><label>BEAT</label><input id="desiredBeat" type="number" value="10" min=".1" max="60" step=".01"></div></div>
+<button class="btn secondary" id="apply">Ustaw L/R wokół carrier</button>
+</div>
+<div class="card"><strong>Brainwave presets</strong><div class="chips" style="margin-top:10px"><button class="chip bw" data-b="2">Delta 2</button><button class="chip bw" data-b="6">Theta 6</button><button class="chip bw active" data-b="10">Alpha 10</button><button class="chip bw" data-b="18">Beta 18</button><button class="chip bw" data-b="35">Gamma 35</button></div></div>
+<div class="card"><strong>Frequency Library</strong><div class="chips" style="margin-top:10px"><button class="chip cf" data-c="432">432</button><button class="chip cf" data-c="528">528</button><button class="chip cf" data-c="639">639</button><button class="chip cf" data-c="741">741</button><button class="chip cf" data-c="852">852</button><button class="chip cf" data-c="888">888</button><button class="chip cf" data-c="963">963</button></div><div class="info" id="freqInfo" style="margin-top:12px">Wybierz Hz. Opisy są tradycyjne/popularne, nie medyczne.</div></div>
+<div class="card">
+<div class="grid2"><button class="btn secondary" id="testL">TEST LEFT</button><button class="btn secondary" id="testR">TEST RIGHT</button></div>
+<div class="grid2" style="margin-top:10px"><div><label>CZAS (min)</label><input id="labMins" type="number" min="1" max="180" value="20"></div><div><label>GŁOŚNOŚĆ</label><input id="labVol" type="range" min="0" max=".2" step=".01" value=".07"></div></div>
+<div class="big" id="labTimer">20:00</div>
+<button class="btn primary" id="startLab">▶ START LAB</button><button class="btn secondary hidden" id="stopLab">■ STOP</button><button class="btn secondary" id="savePreset">Zapisz ustawienie</button>
+<div class="center muted" id="statusLab" style="margin-top:10px"><span class="audioDot" id="dotLab"></span>Gotowy</div>
+</div>
+</section>
+
+<section id="journey" class="panel">
+<div class="hero"><h1>Journey</h1><p>Wielostopniowa sesja. Przejścia są wykonywane względem zegara audio, nie timera ekranu.</p></div>
+<div class="card"><strong>Etapy</strong><div id="stages"></div><button class="btn secondary" id="addStage">＋ Dodaj etap</button></div>
+<div class="card"><div class="row"><span class="muted">Łączny czas</span><strong id="journeyTotal">30 min</strong></div><div class="big" id="journeyTimer">30:00</div><button class="btn primary" id="startJourney">▶ START JOURNEY</button><button class="btn secondary hidden" id="stopJourney">■ STOP</button><button class="btn secondary" id="shareJourney">Udostępnij Journey</button><div class="center muted" id="statusJourney" style="margin-top:10px"><span class="audioDot" id="dotJourney"></span>Gotowy</div></div>
+</section>
+
+<section id="mixer" class="panel">
+<div class="hero"><h1>Mixer</h1><p>Warstwy tła bez przeładowania. W tej wersji: Brown, Pink i White Noise.</p></div>
+<div class="card">
+<div class="sound"><strong>Binaural</strong><input id="mxB" type="range" min="0" max="1" step=".01" value=".75"><span id="mxBv">75%</span></div>
+<div class="sound"><strong>Brown</strong><input id="mxBr" type="range" min="0" max="1" step=".01" value=".2"><span id="mxBrv">20%</span></div>
+<div class="sound"><strong>Pink</strong><input id="mxP" type="range" min="0" max="1" step=".01" value="0"><span id="mxPv">0%</span></div>
+<div class="sound"><strong>White</strong><input id="mxW" type="range" min="0" max="1" step=".01" value="0"><span id="mxWv">0%</span></div>
+<div class="grid2"><div><label>CZAS (min)</label><input id="mixMins" type="number" min="1" max="180" value="20"></div><div><label>GŁÓWNA GŁOŚNOŚĆ</label><input id="mixVol" type="range" min="0" max=".2" step=".01" value=".08"></div></div>
+<div class="big" id="mixTimer">20:00</div>
+<button class="btn primary" id="startMix">▶ START MIX</button><button class="btn secondary hidden" id="stopMix">■ STOP</button><div class="center muted" id="statusMix" style="margin-top:10px"><span class="audioDot" id="dotMix"></span>Gotowy</div>
+</div>
+<div class="card"><strong>Moje ustawienie</strong><div class="info" id="savedInfo" style="margin-top:8px">Brak zapisanego presetu.</div><button class="btn secondary" id="loadPreset">Wczytaj do Lab</button></div>
+</section>
+</div>
+
+<button id="resumeBtn" class="resume hidden">▶ WZNÓW AUDIO</button>
+
+<nav class="tabs">
+<button class="tab active" data-tab="simple"><b>◉</b>Simple</button>
+<button class="tab" data-tab="lab"><b>⌁</b>Lab</button>
+<button class="tab" data-tab="journey"><b>↝</b>Journey</button>
+<button class="tab" data-tab="mixer"><b>≋</b>Mixer</button>
+</nav>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const P={focus:[205,10],relax:[205,7],med:[205,6],sleep:[180,3],nap:[200,6],creative:[220,8]};
+const F={432:"432 Hz — alternatywny strój muzyczny A=432 Hz.",528:"528 Hz — popularnie: transformacja / „love frequency”; brak potwierdzenia twierdzeń o naprawie DNA.",639:"639 Hz — tradycyjnie: relacje i harmonia.",741:"741 Hz — popularnie: klarowność i ekspresja.",852:"852 Hz — popularnie: intuicja i świadomość.",888:"888 Hz — numerologia: obfitość/prosperity; nie jest klasycznym Solfeggio.",963:"963 Hz — popularnie: „wyższa świadomość”."};
+let cur="focus";
+let E={ctx:null,oL:null,oR:null,pL:null,pR:null,toneGain:null,master:null,noise:[],playing:false,mode:null,endAudioTime:null,timer:null,journeyEvents:[],transitionSec:8};
+
+function clamp(v,min,max){return Math.min(max,Math.max(min,Number(v)||0))}
+function sym(c,b){return[c-b/2,c+b/2]}
+function formatSec(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+function dots(state){["dotSimple","dotLab","dotJourney","dotMix"].forEach(id=>{$(id).classList.remove("on","warn");if(state==="on")$(id).classList.add("on");if(state==="warn")$(id).classList.add("warn")})}
+function statuses(text){["statusSimple","statusLab","statusJourney","statusMix"].forEach(id=>{let dot=$(id).querySelector(".audioDot");$(id).innerHTML="";$(id).appendChild(dot);$(id).appendChild(document.createTextNode(text))})}
+function showResume(show){$("resumeBtn").classList.toggle("hidden",!show)}
+function cancelTimer(){if(E.timer){clearInterval(E.timer);E.timer=null}}
+function cancelJourney(){E.journeyEvents.forEach(clearTimeout);E.journeyEvents=[]}
+function stopNodes(){
+ const oldL=E.oL,oldR=E.oR,oldNoise=[...E.noise],oldTone=E.toneGain,oldMaster=E.master;
+ [oldL,oldR].forEach(o=>{if(o)try{o.stop()}catch(e){}});
+ oldNoise.forEach(n=>{try{n.stop()}catch(e){}});
+ [oldL,oldR,oldTone,oldMaster].forEach(n=>{if(n)try{n.disconnect()}catch(e){}});
+ E.noise=[];E.oL=null;E.oR=null;E.pL=null;E.pR=null;E.toneGain=null;E.master=null;
+}
+function hardStop(resetUi=true){
+ cancelTimer();cancelJourney();
+ if(E.master&&E.ctx){
+  try{
+   E.master.gain.cancelScheduledValues(E.ctx.currentTime);
+   E.master.gain.setValueAtTime(0,E.ctx.currentTime);
+  }catch(e){}
+ }
+ /* WAŻNE: zatrzymujemy wyłącznie aktualne węzły od razu.
+    W RC1 był opóźniony setTimeout(stopNodes,120), który po starcie
+    nowej sesji zatrzymywał JUŻ NOWE oscylatory. */
+ stopNodes();
+ E.playing=false;E.mode=null;E.endAudioTime=null;showResume(false);dots("off");
+ if(resetUi){
+  [["startSimple","stopSimple"],["startLab","stopLab"],["startJourney","stopJourney"],["startMix","stopMix"]].forEach(([a,b])=>{toggle(a,b,false)});
+ }
+}
+async function ensureContext(){
+ const C=window.AudioContext||window.webkitAudioContext;
+ if(!C)throw new Error("Ta przeglądarka nie obsługuje Web Audio");
+ if(!E.ctx || E.ctx.state==="closed"){
+  E.ctx=new C({latencyHint:"interactive"});
+  E.ctx.onstatechange=()=>{
+   if(!E.playing)return;
+   if(E.ctx.state==="running"){dots("on");showResume(false);statuses("Odtwarzanie")}
+   else if(E.ctx.state==="suspended"||E.ctx.state==="interrupted"){dots("warn");showResume(true);statuses("Audio wstrzymane — stuknij WZNÓW")}
+  };
+ }
+ if(E.ctx.state!=="running")await E.ctx.resume();
+ return E.ctx;
+}
+function makeEngine(l,r,vol){
+ const c=E.ctx, master=c.createGain(), toneGain=c.createGain(), oL=c.createOscillator(),oR=c.createOscillator(),pL=c.createStereoPanner(),pR=c.createStereoPanner();
+ pL.pan.value=-1;pR.pan.value=1;oL.frequency.value=l;oR.frequency.value=r;
+ master.gain.setValueAtTime(0,c.currentTime);master.gain.linearRampToValueAtTime(vol,c.currentTime+.8);
+ toneGain.gain.value=1;
+ oL.connect(pL).connect(toneGain);oR.connect(pR).connect(toneGain);toneGain.connect(master);master.connect(c.destination);
+ oL.start();oR.start();
+ E.master=master;E.toneGain=toneGain;E.oL=oL;E.oR=oR;E.pL=pL;E.pR=pR;E.playing=true;dots("on");showResume(false);
+}
+async function startEngine(l,r,vol,mode){
+ hardStop(false);
+ await ensureContext();
+ makeEngine(l,r,vol);
+ E.mode=mode;
+}
+function smoothTo(l,r,sec=E.transitionSec){
+ if(!E.playing||!E.ctx||!E.oL||!E.oR)return false;
+ const now=E.ctx.currentTime, end=now+sec;
+ [E.oL.frequency,E.oR.frequency].forEach(p=>{p.cancelScheduledValues(now);p.setValueAtTime(p.value,now)});
+ E.oL.frequency.linearRampToValueAtTime(l,end);E.oR.frequency.linearRampToValueAtTime(r,end);
+ return true;
+}
+function setSessionDuration(min,timerEl,done){
+ cancelTimer();
+ const c=E.ctx;
+ E.endAudioTime=c.currentTime+Math.max(1,Number(min)||1)*60;
+ const tick=()=>{
+  if(!E.playing||!E.ctx)return;
+  const remaining=E.endAudioTime-E.ctx.currentTime;
+  timerEl.textContent=formatSec(remaining);
+  if(remaining<=0){cancelTimer();hardStop();timerEl.textContent="00:00";done&&done()}
+ };
+ tick();E.timer=setInterval(tick,250);
+}
+function toggle(a,b,on){$(a).classList.toggle("hidden",on);$(b).classList.toggle("hidden",!on)}
+function setActiveTab(id){document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===id));document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===id))}
+function setStatus(id,text){let el=$(id),dot=el.querySelector(".audioDot");el.innerHTML="";el.appendChild(dot);el.appendChild(document.createTextNode(text))}
+function uiStopped(){[["startSimple","stopSimple"],["startLab","stopLab"],["startJourney","stopJourney"],["startMix","stopMix"]].forEach(([a,b])=>toggle(a,b,false))}
+
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setActiveTab(b.dataset.tab));
+
+document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
+ cur=b.dataset.p;
+ document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("active",x===b));
+ if(E.playing&&E.mode==="simple"){
+  const [c,bt]=P[cur],[l,r]=sym(c,bt);
+  smoothTo(l,r);
+  setStatus("statusSimple","Płynne przejście → "+b.querySelector("strong").textContent);
+ }
+});
+$("mins").onchange=()=>{$("timer").textContent=String($("mins").value).padStart(2,"0")+":00";if(E.playing&&E.mode==="simple")setSessionDuration(+$("mins").value,$("timer"),()=>setStatus("statusSimple","Zakończono"))};
+$("vol").oninput=()=>{if(E.playing&&E.mode==="simple"&&E.master)E.master.gain.setTargetAtTime(+$("vol").value,E.ctx.currentTime,.05)};
+$("startSimple").onclick=async()=>{
+ try{
+  const [c,b]=P[cur],[l,r]=sym(c,b),m=+$("mins").value;
+  await startEngine(l,r,+$("vol").value,"simple");toggle("startSimple","stopSimple",true);setStatus("statusSimple","Odtwarzanie");setSessionDuration(m,$("timer"),()=>{uiStopped();setStatus("statusSimple","Zakończono")});
+ }catch(e){setStatus("statusSimple","Błąd audio: "+e.message)}
+};
+$("stopSimple").onclick=()=>{hardStop();setStatus("statusSimple","Zatrzymano")};
+
+function labSync(fromLR=true){
+ const l=clamp($("left").value,40,1200),r=clamp($("right").value,40,1200);
+ $("beat").textContent=Math.abs(r-l).toFixed(2);
+ if(fromLR){$("carrier").value=((l+r)/2).toFixed(2);$("desiredBeat").value=Math.abs(r-l).toFixed(2)}
+ if(E.playing&&E.mode==="lab")smoothTo(l,r);
+}
+$("left").oninput=()=>labSync(true);$("right").oninput=()=>labSync(true);
+$("apply").onclick=()=>{
+ const c=clamp($("carrier").value,40,1200),b=clamp($("desiredBeat").value,.1,60),[l,r]=sym(c,b);
+ $("left").value=l.toFixed(2);$("right").value=r.toFixed(2);labSync(false);
+ if(E.playing&&E.mode==="lab")smoothTo(l,r);
+};
+document.querySelectorAll(".bw").forEach(b=>b.onclick=()=>{document.querySelectorAll(".bw").forEach(x=>x.classList.toggle("active",x===b));$("desiredBeat").value=b.dataset.b;$("apply").click()});
+document.querySelectorAll(".cf").forEach(b=>b.onclick=()=>{$("carrier").value=b.dataset.c;$("freqInfo").textContent=F[b.dataset.c];$("apply").click()});
+$("labMins").oninput=()=>{$("labTimer").textContent=formatSec(Math.max(1,+$("labMins").value||1)*60);if(E.playing&&E.mode==="lab")setSessionDuration(+$("labMins").value,$("labTimer"),()=>setStatus("statusLab","Zakończono"))};
+$("labVol").oninput=()=>{if(E.playing&&E.mode==="lab"&&E.master)E.master.gain.setTargetAtTime(+$("labVol").value,E.ctx.currentTime,.05)};
+$("startLab").onclick=async()=>{
+ try{await startEngine(+$("left").value,+$("right").value,+$("labVol").value,"lab");toggle("startLab","stopLab",true);setStatus("statusLab","Odtwarzanie");setSessionDuration(+$("labMins").value,$("labTimer"),()=>{uiStopped();setStatus("statusLab","Zakończono")})}
+ catch(e){setStatus("statusLab","Błąd audio: "+e.message)}
+};
+$("stopLab").onclick=()=>{hardStop();setStatus("statusLab","Zatrzymano")};
+
+async function ear(side){
+ hardStop();await ensureContext();
+ const c=E.ctx,o=c.createOscillator(),p=c.createStereoPanner(),g=c.createGain();p.pan.value=side==="L"?-1:1;g.gain.value=.05;o.frequency.value=440;o.connect(p).connect(g).connect(c.destination);o.start();o.stop(c.currentTime+1);
+}
+$("testL").onclick=()=>ear("L");$("testR").onclick=()=>ear("R");
+
+$("savePreset").onclick=()=>{localStorage.setItem("b2preset",JSON.stringify({l:+$("left").value,r:+$("right").value,m:+$("labMins").value}));saved()};
+function saved(){let p=localStorage.getItem("b2preset");$("savedInfo").textContent=p?(()=>{let x=JSON.parse(p);return`L ${x.l} Hz • R ${x.r} Hz • ${x.m} min`})():"Brak zapisanego presetu."}
+$("loadPreset").onclick=()=>{let p=localStorage.getItem("b2preset");if(!p)return;let x=JSON.parse(p);$("left").value=x.l;$("right").value=x.r;$("labMins").value=x.m;labSync(true);$("labTimer").textContent=formatSec(x.m*60);setActiveTab("lab")};
+
+function getStages(){return[...document.querySelectorAll(".stage")].map(d=>({b:clamp(d.querySelector(".sb").value,.1,60),m:Math.max(1,Number(d.querySelector(".sm").value)||1)}))}
+function render(st=[{b:10,m:5},{b:8,m:10},{b:6,m:10},{b:4,m:5}]){
+ $("stages").innerHTML="";
+ st.forEach((s,i)=>{
+  const d=document.createElement("div");d.className="stage";
+  d.innerHTML=`<div><label>BEAT</label><input class="sb" type="number" value="${s.b}" min=".1" max="60" step=".1"></div><div><label>MIN</label><input class="sm" type="number" value="${s.m}" min="1" max="120"></div><button>×</button>`;
+  d.querySelector("button").onclick=()=>{let a=getStages();a.splice(i,1);render(a.length?a:[{b:10,m:10}])};
+  d.querySelectorAll("input").forEach(x=>x.oninput=calcJourney);$("stages").appendChild(d)
+ });
+ calcJourney();
+}
+function calcJourney(){const total=getStages().reduce((a,s)=>a+s.m,0);$("journeyTotal").textContent=total+" min";$("journeyTimer").textContent=formatSec(total*60)}
+$("addStage").onclick=()=>{let a=getStages();a.push({b:a.length?a[a.length-1].b:10,m:5});render(a)};
+$("startJourney").onclick=async()=>{
+ try{
+  const stages=getStages(),carrier=205,total=stages.reduce((a,x)=>a+x.m,0),[l,r]=sym(carrier,stages[0].b);
+  await startEngine(l,r,.07,"journey");toggle("startJourney","stopJourney",true);setStatus("statusJourney","Odtwarzanie");
+  let at=E.ctx.currentTime;
+  for(let i=1;i<stages.length;i++){
+   at+=stages[i-1].m*60;
+   const [nl,nr]=sym(carrier,stages[i].b),start=Math.max(E.ctx.currentTime,at-E.transitionSec);
+   E.oL.frequency.setValueAtTime(E.oL.frequency.value,start);E.oR.frequency.setValueAtTime(E.oR.frequency.value,start);
+   E.oL.frequency.linearRampToValueAtTime(nl,at);E.oR.frequency.linearRampToValueAtTime(nr,at);
+  }
+  setSessionDuration(total,$("journeyTimer"),()=>{uiStopped();setStatus("statusJourney","Zakończono")});
+ }catch(e){setStatus("statusJourney","Błąd audio: "+e.message)}
+};
+$("stopJourney").onclick=()=>{hardStop();setStatus("statusJourney","Zatrzymano")};
+
+function share(obj){
+ const u=new URL(location.href);u.searchParams.set("s",btoa(unescape(encodeURIComponent(JSON.stringify(obj)))));
+ if(navigator.share){navigator.share({title:"Binaural session",url:u.toString()}).catch(()=>{})}
+ else navigator.clipboard?.writeText(u.toString());
+}
+$("shareSimple").onclick=()=>share({t:"s",p:cur,m:+$("mins").value});$("shareJourney").onclick=()=>share({t:"j",s:getStages()});
+
+function loadShared(){
+ const raw=new URL(location.href).searchParams.get("s");if(!raw)return;
+ try{
+  const o=JSON.parse(decodeURIComponent(escape(atob(raw))));
+  if(o.t==="s"&&P[o.p]){cur=o.p;$("mins").value=o.m||20;$("timer").textContent=formatSec((o.m||20)*60);document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("active",x.dataset.p===cur))}
+  if(o.t==="j"&&Array.isArray(o.s)){render(o.s);setActiveTab("journey")}
+ }catch(e){}
+}
+
+function noise(c,type,lev){
+ if(!lev)return;
+ const len=c.sampleRate*2,b=c.createBuffer(1,len,c.sampleRate),d=b.getChannelData(0);let last=0,pink=0;
+ for(let i=0;i<len;i++){const w=Math.random()*2-1;if(type==="white")d[i]=w*.25;else if(type==="brown"){last=(last+.02*w)/1.02;d[i]=last*.9}else{pink=.985*pink+.15*w;d[i]=pink*.35}}
+ const src=c.createBufferSource(),g=c.createGain();src.buffer=b;src.loop=true;g.gain.value=lev;src.connect(g).connect(E.master);src.start();E.noise.push(src);
+}
+$("mixMins").oninput=()=>{$("mixTimer").textContent=formatSec(Math.max(1,+$("mixMins").value||1)*60);if(E.playing&&E.mode==="mix")setSessionDuration(+$("mixMins").value,$("mixTimer"),()=>setStatus("statusMix","Zakończono"))};
+$("startMix").onclick=async()=>{
+ try{
+  const [l,r]=sym(205,10),base=clamp($("mixVol").value,0,.2);
+  await startEngine(l,r,base*clamp($("mxB").value,0,1),"mix");
+  noise(E.ctx,"brown",clamp($("mxBr").value,0,1)*.12);noise(E.ctx,"pink",clamp($("mxP").value,0,1)*.12);noise(E.ctx,"white",clamp($("mxW").value,0,1)*.08);
+  toggle("startMix","stopMix",true);setStatus("statusMix","Odtwarzanie");setSessionDuration(+$("mixMins").value,$("mixTimer"),()=>{uiStopped();setStatus("statusMix","Zakończono")});
+ }catch(e){setStatus("statusMix","Błąd audio: "+e.message)}
+};
+$("stopMix").onclick=()=>{hardStop();setStatus("statusMix","Zatrzymano")};
+[["mxB","mxBv"],["mxBr","mxBrv"],["mxP","mxPv"],["mxW","mxWv"]].forEach(([a,b])=>$(a).oninput=()=>$(b).textContent=Math.round(+$(a).value*100)+"%");
+
+$("resumeBtn").onclick=async()=>{try{await ensureContext();dots("on");showResume(false);statuses("Odtwarzanie")}catch(e){statuses("Nie udało się wznowić audio")}};
+
+document.addEventListener("visibilitychange",async()=>{
+ if(!E.playing)return;
+ if(document.visibilityState==="visible"&&E.ctx&&E.ctx.state!=="running"){
+  try{await E.ctx.resume()}catch(e){showResume(true)}
+ }
+});
+window.addEventListener("pageshow",async()=>{if(E.playing&&E.ctx&&E.ctx.state!=="running"){try{await E.ctx.resume()}catch(e){showResume(true)}}});
+window.addEventListener("focus",async()=>{if(E.playing&&E.ctx&&E.ctx.state!=="running"){try{await E.ctx.resume()}catch(e){showResume(true)}}});
+
+render();saved();loadShared();
+</script>
+</body></html>
